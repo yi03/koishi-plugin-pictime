@@ -73,14 +73,14 @@ export async function apply(ctx: Context, config: Config) {
     try {
       // 使用注入的 http 服务获取 ArrayBuffer
       const responseArrayBuffer = await ctx.http.get<ArrayBuffer>(url, {
-          responseType: 'arraybuffer',
-          timeout: 20000 // 设置 20 秒超时
+        responseType: 'arraybuffer',
+        timeout: 20000 // 设置 20 秒超时
       });
       // ★★★ 将 ArrayBuffer 转换为 Buffer ★★★
       return Buffer.from(responseArrayBuffer);
     } catch (error) {
-       logger.error(`[Helper] Failed to load image from URL: ${url}`, error);
-       throw new Error(`Failed to download image: ${error.message}`);
+      logger.error(`[Helper] Failed to load image from URL: ${url}`, error);
+      throw new Error(`Failed to download image: ${error.message}`);
     }
   }
 
@@ -106,19 +106,17 @@ export async function apply(ctx: Context, config: Config) {
     fileName = fileName.replace(/[<>:"/\\|?*]+/g, '_').replace(/\.[^/.]+$/, "") + '.png';
 
     try {
-        await createDir(savePath); // 确保目标目录存在
-        logger.info(`[Helper] Saving image to path: ${savePath}`);
-        const imageBuffer = await loadImageFromUrl(imageUrl); // 下载图片
-        if (imageBuffer.byteLength === 0) {
-            throw new Error("Downloaded image data is empty.");
-        }
-        const filePath = path.join(savePath, fileName);
-        fs.writeFileSync(filePath, imageBuffer); // 写入文件
-        logger.info(`[Helper] Image saved successfully: ${filePath}`);
+      await createDir(savePath); // 确保目标目录存在
+      const imageBuffer = await loadImageFromUrl(imageUrl); // 下载图片
+      if (imageBuffer.byteLength === 0) {
+        throw new Error("Downloaded image data is empty.");
+      }
+      const filePath = path.join(savePath, fileName);
+      fs.writeFileSync(filePath, imageBuffer); // 写入文件
     } catch (error) {
-        // 捕获 loadImageFromUrl 或 writeFileSync 的错误
-        logger.error(`[Helper] Failed to save image from URL ${imageUrl} to ${savePath}`, error);
-        throw error; // 将错误向上抛出，以便中间件能捕获
+      // 捕获 loadImageFromUrl 或 writeFileSync 的错误
+      logger.error(`[Helper] Failed to save image from URL ${imageUrl} to ${savePath}`, error);
+      throw error; // 将错误向上抛出，以便中间件能捕获
     }
   }
 
@@ -127,13 +125,12 @@ export async function apply(ctx: Context, config: Config) {
   const recordingUsers = new Map<number, { count: number, errors: number, dispose: () => void }>();
 
   // --- 插件启动时创建根目录 ---
-   try {
-       await createDir(saveBaseDir);
-       logger.info(`图片存储根目录已确认/创建: ${saveBaseDir}`);
-   } catch (error) {
-       logger.error(`无法初始化图片存储根目录: ${saveBaseDir}`, error);
-       // 可以考虑阻止插件加载
-   }
+  try {
+    await createDir(saveBaseDir);
+  } catch (error) {
+    logger.error(`无法初始化图片存储根目录: ${saveBaseDir}`, error);
+    // 可以考虑阻止插件加载
+  }
 
   // --- 指令: pictime ---
   ctx.command('pictime', '图图时间')
@@ -150,10 +147,9 @@ export async function apply(ctx: Context, config: Config) {
         return h('at', { id: userId }) + ' 你已经在记录图图了，发送 "over" 或 "停止" 来结束。';
       }
 
-      logger.info(`[Pictime Command] User ${userName} (${userId}) in Guild ${guildId} started recording.`);
       session.send(h('at', { id: userId }) + ' 开始记录啦，请发送图片。说 "over"或 "停止" 来结束。');
 
-      const userState = { count: 0, errors: 0, dispose: () => {} };
+      const userState = { count: 0, errors: 0, dispose: () => { } };
 
       // --- 核心中间件逻辑 ---
       const dispose = ctx.middleware(async (middlewareSession, next) => {
@@ -164,17 +160,14 @@ export async function apply(ctx: Context, config: Config) {
 
         // 是目标用户的消息
         const content = middlewareSession.content;
-        logger.info(`[Pictime Middleware] Processing message from target user ${userId}.`);
 
         // 2. 尝试用 h.select 提取 img 元素
         const imageElements = h.select(content, 'img');
         const isOverCommand = ['over', '停止'].includes(content?.trim() || '');
 
-        logger.info(`[Pictime Middleware] User ${userId} - Found ${imageElements.length} <img/> elements. isOverCommand: ${isOverCommand}`);
 
         // 3. 处理图片消息 (使用 h.select)
         if (imageElements.length > 0) {
-          logger.info(`[Pictime Middleware] Image(s) detected! State: count=${userState.count}, errors=${userState.errors}`);
           let imagesProcessedInThisMessage = 0;
           let errorsInThisMessage = 0;
 
@@ -192,14 +185,12 @@ export async function apply(ctx: Context, config: Config) {
             const imageUrl = imageUrlRaw.replace(/&/g, '&'); // 解码 URL 中的 &
             const imageFileName = imageFileRaw; // 直接使用原始文件名，可能为 undefined
 
-            logger.info(`[Pictime Middleware] User ${userId} - Extracted from <img/> tag: url=${imageUrl}, file=${imageFileName}`);
 
             try {
-              logger.info(`[Pictime Middleware] User ${userId} - Attempting to save image: ${imageUrl}`);
               // 构建保存路径：根目录/群号/用户ID
-              await saveImage(imageUrl, imageFileName, saveBaseDir); // 调用保存函数
+              const userGuildPath = path.join(saveBaseDir, String(guildId), String(userId));
+              await saveImage(imageUrl, imageFileName, userGuildPath); // 调用 saveImage
               imagesProcessedInThisMessage++; // 成功计数
-              logger.info(`[Pictime Middleware] User ${userId} - Image saved successfully!`);
             } catch (error) {
               errorsInThisMessage++; // 失败计数
               // 错误已在 saveImage 中记录，这里可以只记录上下文
@@ -210,21 +201,18 @@ export async function apply(ctx: Context, config: Config) {
           // 更新本次会话的总状态
           userState.count += imagesProcessedInThisMessage;
           userState.errors += errorsInThisMessage;
-          logger.info(`[Pictime Middleware] User ${userId} - Message processed. New state: count=${userState.count}, errors=${userState.errors}`);
 
           // 图片消息处理完成，继续传递给下一个中间件（如果有的话）
           return next();
 
-        // 4. 处理结束命令
+          // 4. 处理结束命令
         } else if (isOverCommand) {
-          logger.info(`[Pictime Middleware] User ${userId} - 'over' command received. Finalizing state: count=${userState.count}, errors=${userState.errors}`);
 
           // 清理中间件和状态
           const state = recordingUsers.get(userId);
           if (state) {
             state.dispose(); // 调用 dispose 函数移除中间件监听
             recordingUsers.delete(userId); // 从 Map 中移除记录
-            logger.info(`[Pictime Middleware] Middleware disposed for user ${userId}.`);
           }
 
           // 如果本次没有发送任何图片（成功或失败都没有）
@@ -248,7 +236,6 @@ export async function apply(ctx: Context, config: Config) {
               sum: newTotalSum // 保存新的总数
             }], ['id']); // 使用 id 作为 upsert 的键
 
-            logger.info(`[Pictime Middleware] Database updated for user ${userId}. New total sum: ${newTotalSum}`);
 
             // 构建并返回最终结果消息
             let resultMessage = `记录结束！\n本次成功保存 ${userState.count} 张图图。\n`;
@@ -263,10 +250,10 @@ export async function apply(ctx: Context, config: Config) {
             return h('at', { id: userId }) + ' 记录结束，但保存数据时遇到错误。';
           }
 
-        // 5. 其他消息 (非图片，非结束命令)
+          // 5. 其他消息 (非图片，非结束命令)
         } else {
-           logger.debug(`[Pictime Middleware] User ${userId} - Not an image or 'over' command. Passing to next.`);
-           return next(); // 交给其他中间件处理
+          logger.debug(`[Pictime Middleware] User ${userId} - Not an image or 'over' command. Passing to next.`);
+          return next(); // 交给其他中间件处理
         }
       }, true); // true 表示前置中间件，优先处理
 
@@ -284,34 +271,31 @@ export async function apply(ctx: Context, config: Config) {
       if (!currentGuildId) {
         return '请在群聊中使用此功能查看排名。';
       }
-      logger.info(`[Rankings Command] Request from guild ${currentGuildId}`);
 
       try {
-          // 使用已注入的 ctx.database
-          const data = await ctx.database.get('pictime', { guildid: currentGuildId }, {
-              sort: { sum: 'desc' }, // 按 sum 降序排序
-              limit: 10 // 最多显示前 10 名
-          });
+        // 使用已注入的 ctx.database
+        const data = await ctx.database.get('pictime', { guildid: currentGuildId }, {
+          sort: { sum: 'desc' }, // 按 sum 降序排序
+          limit: 10 // 最多显示前 10 名
+        });
 
-          if (!data || data.length === 0) {
-            logger.info(`[Rankings Command] No data found for guild ${currentGuildId}`);
-            return '呜呜，本群还没有人发过图图记录。';
-          }
+        if (!data || data.length === 0) {
+          return '呜呜，本群还没有人发过图图记录。';
+        }
 
-          logger.info(`[Rankings Command] Found ${data.length} records for guild ${currentGuildId}`);
-          // 构建排名消息
-          let messages = [`本群发图数量排名 (Top ${data.length})：\n`];
-          data.forEach((userRecord, index) => {
-            // 尝试提及用户，如果失败则只显示名字
-            const mention = h('at', { id: userRecord.id, name: userRecord.uname });
-            messages.push(`第 ${index + 1} 名: ${mention} (${userRecord.uname})\n🖼️ 发图：${userRecord.sum} 张`);
-          });
+        // 构建排名消息
+        let messages = [`本群发图数量排名 (Top ${data.length})：\n`];
+        data.forEach((userRecord, index) => {
+          // 尝试提及用户，如果失败则只显示名字
+          const mention = h('at', { id: userRecord.id, name: userRecord.uname });
+          messages.push(`第 ${index + 1} 名: ${mention} (${userRecord.uname})\n🖼️ 发图：${userRecord.sum} 张`);
+        });
 
-          return messages.join('\n\n'); // 使用两个换行符分隔排名条目，更清晰
+        return messages.join('\n\n'); // 使用两个换行符分隔排名条目，更清晰
 
       } catch (dbError) {
-          logger.error(`[Rankings Command] Failed to fetch rankings for guild ${currentGuildId}`, dbError);
-          return '查询排名时出错，请稍后再试。';
+        logger.error(`[Rankings Command] Failed to fetch rankings for guild ${currentGuildId}`, dbError);
+        return '查询排名时出错，请稍后再试。';
       }
     }); // pictime.rankings 命令定义结束
 
