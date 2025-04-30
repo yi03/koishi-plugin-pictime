@@ -10,6 +10,10 @@
   ],
   "license": "MIT",
   "homepage": "https://github.com/yi03/koishi-plugin-pictime",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yi03/koishi-plugin-pictime.git"
+  },
   "keywords": [
     "chatbot",
     "koishi",
