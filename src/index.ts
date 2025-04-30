@@ -188,7 +188,7 @@ export async function apply(ctx: Context, config: Config) {
 
             try {
               // 构建保存路径：根目录/群号/用户ID
-              const userGuildPath = path.join(saveBaseDir, String(guildId), String(userId));
+              const userGuildPath = path.join(saveBaseDir, String(userId));
               await saveImage(imageUrl, imageFileName, userGuildPath); // 调用 saveImage
               imagesProcessedInThisMessage++; // 成功计数
             } catch (error) {
