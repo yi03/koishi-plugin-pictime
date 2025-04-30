@@ -17,7 +17,8 @@
   "keywords": [
     "chatbot",
     "koishi",
-    "plugin"
+    "plugin",
+    "image"
   ],
   "peerDependencies": {
     "koishi": "^4.15.0"
