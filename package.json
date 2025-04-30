@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-pictime",
-  "description": "图图时间",
+  "description": "保存某时间段某用户发送的所有图片",
   "version": "0.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
@@ -9,14 +9,12 @@
     "dist"
   ],
   "license": "MIT",
-  "scripts": {},
   "keywords": [
     "chatbot",
     "koishi",
     "plugin"
   ],
-  "devDependencies": {},
   "peerDependencies": {
-    "koishi": "4.18.7"
+    "koishi": "^4.15.0"
   }
 }
