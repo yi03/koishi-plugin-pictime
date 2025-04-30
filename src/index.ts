@@ -26,7 +26,7 @@ export interface Config {
 
 export const Config: Schema<Config> = Schema.object({
   paths: Schema.string()
-    .description('存储路径（相对于 Koishi 根目录下的 data 文件夹）')
+    .description('存储路径')
     .default('image-time'), // 默认存储在 data/image-time
 });
 
@@ -187,7 +187,7 @@ export async function apply(ctx: Context, config: Config) {
 
 
             try {
-              // 构建保存路径：根目录/群号/用户ID
+              // 构建保存路径：根目录/用户ID
               const userGuildPath = path.join(saveBaseDir, String(userId));
               await saveImage(imageUrl, imageFileName, userGuildPath); // 调用 saveImage
               imagesProcessedInThisMessage++; // 成功计数
